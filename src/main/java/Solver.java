@@ -1,8 +1,6 @@
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
@@ -170,19 +168,22 @@ public class Solver {
                 }
              }
 
-            RealMatrix canditateMatrix = P.multiply(Q);
+            RealMatrix candidateMatrix = P.multiply(Q);
             double e = 0;
             for(Coordinate c: presentValuesInOriginalMatrix){
-                e += Math.pow( originalMatrix.getEntry(c.getI(), c.getJ()) - canditateMatrix.getEntry(c.getI(), c.getJ()),2);
+                e += Math.pow( originalMatrix.getEntry(c.getI(), c.getJ()) - candidateMatrix.getEntry(c.getI(), c.getJ()),2);
             }
-            if ( e < 0.001)
+            if ( e < 0.001){
+                System.out.println(step);
                 break;
+            }
         }
 
-        System.out.println(P.multiply(Q));
+        printSuggestions(P.multiply(Q));
 
 
     }
+
 
     private double getComputedEntry(RealMatrix p, RealMatrix q, Coordinate c) throws OutOfRangeException {
         double res = 0;
@@ -193,5 +194,29 @@ public class Solver {
         return res;
     }
 
+    private void printSuggestions(RealMatrix matrix ) throws OutOfRangeException {
+        for (int i = 0; i < numOfUsers; i++) {
+            double[] ratings = matrix.getRow(i);
+            List<Movie> movies = new ArrayList<>(numOfMovies);
+            for (int j = 0; j <  ratings.length; j++) {
+                movies.add(new Movie(j, ratings[j]));
+            }
+
+            Collections.sort(movies);
+            int kiiras = 0;
+            User actualUser = users.get(i);
+            while(kiiras != 10 && !movies.isEmpty()){
+                if(!actualUser.getRatedMovies().contains(movies.get(0).getSorszam())){
+                    System.out.print(movies.get(0).getSorszam());
+                    kiiras++;
+                if(!movies.isEmpty() && kiiras < 10)
+                    System.out.print("\t");
+                }
+                movies.remove(0);
+            }
+            System.out.println('\n');
+        }
+
+    }
 
 }
