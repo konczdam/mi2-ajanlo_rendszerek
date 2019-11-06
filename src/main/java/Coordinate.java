@@ -17,6 +17,6 @@ public class Coordinate {
 
     @Override
     public String toString() {
-        return "i: " + i + " j: " + j;
+        return String.format("(i,j) = (%d,%d)", i,j);
     }
 }
