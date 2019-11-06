@@ -2,9 +2,9 @@
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws OutOfRangeException, NotStrictlyPositiveException, DimensionMismatchException {
         Solver solver = new Solver(System.in);
 
-        solver.solve();
+        solver.solve2();
     }
 }
