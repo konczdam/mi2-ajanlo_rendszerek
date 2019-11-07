@@ -12,11 +12,6 @@ public class Solver {
     private List<User> users;
     private List<Coordinate> presentValuesInOriginalMatrix;
     RealMatrix originalMatrix;
-    private final double epsilon = 0.25;
-    private static final double DOUBLE_COMPARE_EPSILON = 0.0001;
-    private double acceptedTotalError;
-    private RealMatrix canditateMatrix;
-    boolean preciseMode = false;
 
     public Solver(InputStream inputStream) throws OutOfRangeException, NotStrictlyPositiveException {
         Scanner scanner = new Scanner(inputStream);
@@ -30,8 +25,7 @@ public class Solver {
         numOfMovies = scanner.nextInt();
         users = new ArrayList<>(numOfUsers);
         IntStream.range(0,numOfUsers).forEach(m -> users.add(new User()));
-        K = new Double(numOfUsers / 2.5).intValue();
-        acceptedTotalError = numOfRatings * 0.5;
+        K = Math.max(new Double(numOfUsers / 12.5).intValue(), 3);
         presentValuesInOriginalMatrix = new ArrayList<>(numOfRatings);
     }
 
@@ -47,33 +41,7 @@ public class Solver {
         }
     }
 
-    public void solve() throws NotStrictlyPositiveException, OutOfRangeException, DimensionMismatchException {
-        RealMatrix P = new Array2DRowRealMatrix(numOfUsers, K);
-        RealMatrix Q = new Array2DRowRealMatrix(K, numOfMovies);
 
-        initMatrixWithRandomValues(P);
-        initMatrixWithRandomValues(Q);
-        double Totalerror = 0;
-        while(true){
-            canditateMatrix = P.multiply(Q);
-            double newTotalError = getTotalError();
-            if(!preciseMode && Math.abs(newTotalError - Totalerror) < 2){
-                preciseMode = true;
-
-            }
-            Totalerror = newTotalError;
-            System.out.println("Totalerror: " + Totalerror);
-            if(!isTotalErrorTooBig())
-                break;
-            editMatrices(P,Q);
-        }
-
-        System.out.println(P);
-        System.out.println(Q);
-
-
-        System.out.println(P.multiply(Q));
-    }
 
     private void initMatrixWithRandomValues(RealMatrix p) throws OutOfRangeException {
         int columns = p.getColumnDimension();
@@ -84,101 +52,39 @@ public class Solver {
                 p.setEntry(i,j, tlr.nextInt(4));
     }
 
-    private boolean isTotalErrorTooBig() throws OutOfRangeException {
-        return getTotalError() > acceptedTotalError;
-    }
 
-    private double getTotalError() throws OutOfRangeException {
-        double res = 0.0;
-        for(Coordinate c: presentValuesInOriginalMatrix){
-            double entry = originalMatrix.getEntry(c.getI(), c.getJ());
-            res += Math.pow(entry - canditateMatrix.getEntry(c.getI(),c.getJ()) , 2);
-        }
-
-        return res;
-
-    }
-
-    double precision = 1;
-
-    private void editMatrices(RealMatrix P, RealMatrix Q) throws OutOfRangeException {
-        if(!preciseMode){
-            for(Coordinate c: presentValuesInOriginalMatrix){
-                double diff = originalMatrix.getEntry(c.getI(), c.getJ()) - canditateMatrix.getEntry(c.getI(), c.getJ());
-
-                if(Math.abs(diff) > epsilon){
-                    editRowOfMatrix(P, c.getI(), diff * 0.1);
-                    editColumnOfMatrix(Q, c.getJ(), diff * 0.1 ) ;
-
-                }
-            }
-        }
-        else{
-            while(true){
-            Coordinate c =presentValuesInOriginalMatrix.get(ThreadLocalRandom.current().nextInt(presentValuesInOriginalMatrix.size()));
-            double diff = originalMatrix.getEntry(c.getI(), c.getJ()) - canditateMatrix.getEntry(c.getI(), c.getJ());
-
-            if(Math.abs(diff) > epsilon){
-                editRowOfMatrix(P, c.getI(), diff * 0.01);
-                editColumnOfMatrix(Q, c.getJ(), diff * 0.01 ) ;
-                break;
-            }
-
-            }
-
-        }
-
-    }
-
-
-    private void editRowOfMatrix(RealMatrix p, int rowIndex, double v) throws OutOfRangeException {
-        int  columns = p.getColumnDimension();
-        for(int i = 0; i < columns; i++){
-            p.setEntry(rowIndex, i, Math.max(p.getEntry(rowIndex, i) + v, 0));
-        }
-    }
-
-    private void editColumnOfMatrix(RealMatrix q, int columnIndex, double v) throws OutOfRangeException {
-        int rows = q.getRowDimension();
-        for (int i = 0; i < rows ; i++) {
-            q.setEntry(i, columnIndex, Math.max(q.getEntry(i, columnIndex) + v,0));
-        }
-    }
-
-
-    public void solve2() throws NotStrictlyPositiveException, OutOfRangeException, DimensionMismatchException {
+    public void solve() throws NotStrictlyPositiveException, OutOfRangeException, DimensionMismatchException {
         RealMatrix P = new Array2DRowRealMatrix(numOfUsers, K);
         RealMatrix Q = new Array2DRowRealMatrix(K, numOfMovies);
 
         initMatrixWithRandomValues(P);
         initMatrixWithRandomValues(Q);
 
-        int steps = 5000;
-        double alpha = 0.0002;
+        int repeats = 10000;
+        double alpha = 0.0003, beta = 0.0003;
 
-        for(int step = 0; step < 5000 ; step++){
+        for(int repeat = 0; repeat < repeats ; repeat++){
             for(Coordinate c: presentValuesInOriginalMatrix){
                 double eij = originalMatrix.getEntry(c.getI(), c.getJ()) - getComputedEntry(P,Q, c);
                 for (int k = 0; k <  K; k++) {
-                    double newEntry = P.getEntry(c.getI(), k) + alpha * (2 * eij * Q.getEntry(k,c.getJ()) - alpha * P.getEntry(c.getI(), k));
+                    double newEntry = P.getEntry(c.getI(), k) + alpha * (2 * eij * Q.getEntry(k,c.getJ()) - beta * P.getEntry(c.getI(), k));
                     P.setEntry(c.getI(), k,  newEntry);
 
-                    newEntry = Q.getEntry(k, c.getJ()) + alpha * (2 * eij * P.getEntry(c.getI(), k) - alpha * Q.getEntry(k, c.getJ()));
+                    newEntry = Q.getEntry(k, c.getJ()) + alpha * (2 * eij * P.getEntry(c.getI(), k) - beta * Q.getEntry(k, c.getJ()));
                     Q.setEntry(k, c.getJ(), newEntry);
+
                 }
              }
 
             RealMatrix candidateMatrix = P.multiply(Q);
-            double e = 0;
+            double error = 0;
             for(Coordinate c: presentValuesInOriginalMatrix){
-                e += Math.pow( originalMatrix.getEntry(c.getI(), c.getJ()) - candidateMatrix.getEntry(c.getI(), c.getJ()),2);
+                error += Math.pow( originalMatrix.getEntry(c.getI(), c.getJ()) - candidateMatrix.getEntry(c.getI(), c.getJ()),2);
             }
-            if ( e < 0.001){
-                System.out.println(step);
+            if ( error < 0.001){
                 break;
             }
         }
-
         printSuggestions(P.multiply(Q));
 
 
@@ -195,6 +101,7 @@ public class Solver {
     }
 
     private void printSuggestions(RealMatrix matrix ) throws OutOfRangeException {
+        System.out.println(matrix);
         for (int i = 0; i < numOfUsers; i++) {
             double[] ratings = matrix.getRow(i);
             List<Movie> movies = new ArrayList<>(numOfMovies);
@@ -214,7 +121,7 @@ public class Solver {
                 }
                 movies.remove(0);
             }
-            System.out.println('\n');
+            System.out.print('\n');
         }
 
     }
