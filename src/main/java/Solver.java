@@ -60,7 +60,7 @@ public class Solver {
         initMatrixWithRandomValues(P);
         initMatrixWithRandomValues(Q);
 
-        int repeats = 10000;
+        int repeats = 1000;
         double alpha = 0.0003, beta = 0.0003;
 
         for(int repeat = 0; repeat < repeats ; repeat++){
@@ -101,7 +101,6 @@ public class Solver {
     }
 
     private void printSuggestions(RealMatrix matrix ) throws OutOfRangeException {
-        System.out.println(matrix);
         for (int i = 0; i < numOfUsers; i++) {
             double[] ratings = matrix.getRow(i);
             List<Movie> movies = new ArrayList<>(numOfMovies);
