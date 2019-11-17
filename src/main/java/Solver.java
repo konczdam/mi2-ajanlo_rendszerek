@@ -50,6 +50,7 @@ public class Solver {
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < columns; j++)
                 p.setEntry(i,j, tlr.nextInt(4));
+//                p.setEntry(i,j,1);
     }
 
 
@@ -60,13 +61,14 @@ public class Solver {
         initMatrixWithRandomValues(P);
         initMatrixWithRandomValues(Q);
 
-        int repeats = 1000;
+        int repeats = 10000;
         double alpha = 0.0003, beta = 0.0003;
 
         for(int repeat = 0; repeat < repeats ; repeat++){
             for(Coordinate c: presentValuesInOriginalMatrix){
                 double eij = originalMatrix.getEntry(c.getI(), c.getJ()) - getComputedEntry(P,Q, c);
                 for (int k = 0; k <  K; k++) {
+
                     double newEntry = P.getEntry(c.getI(), k) + alpha * (2 * eij * Q.getEntry(k,c.getJ()) - beta * P.getEntry(c.getI(), k));
                     P.setEntry(c.getI(), k,  newEntry);
 
@@ -85,6 +87,7 @@ public class Solver {
                 break;
             }
         }
+        System.out.println(P.multiply(Q));
         printSuggestions(P.multiply(Q));
 
 
