@@ -12,7 +12,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 public class Solver {
 
-    private  int numOfRatings, numOfUsers, numOfMovies, K;
+    public static final double MAGIC_NUMBER1 = 12.5;
+    public static final int MAGIC_NUMBER2 = 3;
+    private  int numOfRatings, numOfUsers, numOfMovies, numberOfFeatures;
     private List<User> users;
     private List<Coordinate> presentValuesInOriginalMatrix;
     RealMatrix originalMatrix;
@@ -29,8 +31,13 @@ public class Solver {
         numOfMovies = scanner.nextInt();
         users = new ArrayList<>(numOfUsers);
         IntStream.range(0,numOfUsers).forEach(m -> users.add(new User()));
-        K = Math.max(new Double(numOfUsers / 12.5).intValue(), 3);
         presentValuesInOriginalMatrix = new ArrayList<>(numOfRatings);
+
+        /**
+         *  http://www.quuxlabs.com/blog/2010/09/matrix-factorization-a-simple-tutorial-and-implementation-in-python/
+         *  ...we also make the assumption that the number of features would be smaller than the number of users and the number of items....
+         */
+        numberOfFeatures = Math.max(new Double(numOfUsers / MAGIC_NUMBER1).intValue(), MAGIC_NUMBER2);
     }
 
     private void initMatrix(Scanner scanner){
@@ -57,9 +64,9 @@ public class Solver {
     }
 
 
-    public void solve() {
-        RealMatrix P = new Array2DRowRealMatrix(numOfUsers, K);
-        RealMatrix Q = new Array2DRowRealMatrix(K, numOfMovies);
+    public void solveAndPrintSuggestions() {
+        RealMatrix P = new Array2DRowRealMatrix(numOfUsers, numberOfFeatures);
+        RealMatrix Q = new Array2DRowRealMatrix(numberOfFeatures, numOfMovies);
 
         initMatrixWithRandomValues(P);
         initMatrixWithRandomValues(Q);
@@ -70,7 +77,7 @@ public class Solver {
         for(int repeat = 0; repeat < repeats ; repeat++){
             for(Coordinate c: presentValuesInOriginalMatrix){
                 double eij = originalMatrix.getEntry(c.getI(), c.getJ()) - getComputedEntry(P,Q, c);
-                for (int k = 0; k <  K; k++) {
+                for (int k = 0; k < numberOfFeatures; k++) {
                     double newEntry = P.getEntry(c.getI(), k) + alpha * (2 * eij * Q.getEntry(k,c.getJ()) - beta * P.getEntry(c.getI(), k));
                     P.setEntry(c.getI(), k,  newEntry);
 
@@ -97,7 +104,7 @@ public class Solver {
 
     private double getComputedEntry(RealMatrix p, RealMatrix q, Coordinate c) {
         double res = 0;
-        for(int i = 0; i < K; i++){
+        for(int i = 0; i < numberOfFeatures; i++){
             res += p.getEntry(c.getI(), i) * q.getEntry(i, c.getJ());
         }
 
@@ -113,13 +120,13 @@ public class Solver {
             }
 
             Collections.sort(movies);
-            int kiiras = 0;
+            int suggestedMovies = 0;
             User actualUser = users.get(i);
-            while(kiiras != 10 && !movies.isEmpty()){
+            while(suggestedMovies != 10 && !movies.isEmpty()){
                 if(!actualUser.getRatedMovies().contains(movies.get(0).getSorszam())){
                     System.out.print(movies.get(0).getSorszam());
-                    kiiras++;
-                    if(!movies.isEmpty() && kiiras < 10)
+                    suggestedMovies++;
+                    if(!movies.isEmpty() && suggestedMovies < 10)
                         System.out.print("\t");
                 }
                 movies.remove(0);
