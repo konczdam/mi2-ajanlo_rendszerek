@@ -46,5 +46,12 @@ Az előbbi példa esetében a kimenet 500 sort tartalmaz:
 32 142 38 111 14 18 101 138 64 29  
 75 88 47 43 18 150 83 124 166 182  
 
+## input1.txt
 
+A resources-ban található input1.txt az alábbi táblázat, szövegesen: 
 
+<img src="pics/table1.JPG" width="800">
+
+Az elvárt kimenet valami ilyesmi: 
+
+<img src="pics/table2.JPG" width="800">
