@@ -18,6 +18,8 @@ public class Solver {
     private List<User> users;
     private List<Coordinate> presentValuesInOriginalMatrix;
     RealMatrix originalMatrix;
+    private RealMatrix p;
+    private RealMatrix q;
 
     public Solver(InputStream inputStream)  {
         Scanner scanner = new Scanner(inputStream);
@@ -65,29 +67,29 @@ public class Solver {
 
 
     public void solveAndPrintSuggestions() {
-        RealMatrix P = new Array2DRowRealMatrix(numOfUsers, numberOfFeatures);
-        RealMatrix Q = new Array2DRowRealMatrix(numberOfFeatures, numOfMovies);
+        p = new Array2DRowRealMatrix(numOfUsers, numberOfFeatures);
+        q = new Array2DRowRealMatrix(numberOfFeatures, numOfMovies);
 
-        initMatrixWithRandomValues(P);
-        initMatrixWithRandomValues(Q);
+        initMatrixWithRandomValues(p);
+        initMatrixWithRandomValues(q);
 
         int repeats = 1000;
         double alpha = 0.0003, beta = 0.0003;
 
         for(int repeat = 0; repeat < repeats ; repeat++){
             for(Coordinate c: presentValuesInOriginalMatrix){
-                double eij = originalMatrix.getEntry(c.getI(), c.getJ()) - getComputedEntry(P,Q, c);
+                double eij = originalMatrix.getEntry(c.getI(), c.getJ()) - getComputedEntry(p, q, c);
                 for (int k = 0; k < numberOfFeatures; k++) {
-                    double newEntry = P.getEntry(c.getI(), k) + alpha * (2 * eij * Q.getEntry(k,c.getJ()) - beta * P.getEntry(c.getI(), k));
-                    P.setEntry(c.getI(), k,  newEntry);
+                    double newEntry = p.getEntry(c.getI(), k) + alpha * (2 * eij * q.getEntry(k,c.getJ()) - beta * p.getEntry(c.getI(), k));
+                    p.setEntry(c.getI(), k,  newEntry);
 
-                    newEntry = Q.getEntry(k, c.getJ()) + alpha * (2 * eij * P.getEntry(c.getI(), k) - beta * Q.getEntry(k, c.getJ()));
-                    Q.setEntry(k, c.getJ(), newEntry);
+                    newEntry = q.getEntry(k, c.getJ()) + alpha * (2 * eij * p.getEntry(c.getI(), k) - beta * q.getEntry(k, c.getJ()));
+                    q.setEntry(k, c.getJ(), newEntry);
 
                 }
             }
 
-            RealMatrix candidateMatrix = P.multiply(Q);
+            RealMatrix candidateMatrix = p.multiply(q);
             double error = 0;
             for(Coordinate c: presentValuesInOriginalMatrix){
                 error += Math.pow( originalMatrix.getEntry(c.getI(), c.getJ()) - candidateMatrix.getEntry(c.getI(), c.getJ()),2);
@@ -96,7 +98,7 @@ public class Solver {
                 break;
             }
         }
-        printSuggestions(P.multiply(Q));
+        printSuggestions(p.multiply(q));
 
 
     }
@@ -136,4 +138,8 @@ public class Solver {
 
     }
 
+    public void printMatrix() {
+        RealMatrix matrix = p.multiply(q);
+        System.out.println(matrix.toString());
+    }
 }

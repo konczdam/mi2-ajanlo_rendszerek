@@ -6,5 +6,6 @@ public class Main {
         Solver solver = new Solver(System.in);
 
         solver.solveAndPrintSuggestions();
+        solver.printMatrix();
     }
 }
